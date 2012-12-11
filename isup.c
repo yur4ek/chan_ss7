@@ -488,6 +488,7 @@ int decode_isup_phonenum(int with_presentation_restrict, unsigned char *p, int l
     case 0x01:                  // Subscriber local number. Getting this has
                                 // got to be wrong, but we've seen it 'in the
                                 // wild' where they looked like international.
+        break;
 
     case 0x02:                  // Unknown; again experience suggests
                                 // this should be international.

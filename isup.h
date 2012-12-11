@@ -76,6 +76,7 @@ enum isup_parameter_code {
   IP_USER_SERVICE_INFORMATION = 0x1d,                         /* (3.57) */
   IP_ACCESS_TRANSPORT = 0x03,                                 /* (3.3) */
   IP_GENERIC_NUMBER = 0xc0,                                   /* (3.26) */
+  IP_ORIGINAL_CALLED_NUMBER = 0x28,                           /* (3.39) */
 };
 
 #define PHONENUM_MAX 20

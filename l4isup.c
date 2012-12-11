@@ -2260,6 +2260,7 @@ static int isup_send_iam(struct ast_channel *chan, char *addr, char *rdni, char 
     /* Q.763 3.45 */
     res = isup_calling_party_num_encode(rdni, pres_restr, 0 /* national use: user provided, not verified */, param, sizeof(param));
     isup_msg_add_optional(msg, sizeof(msg), &current, IP_REDIRECTING_NUMBER, param, res);
+    isup_msg_add_optional(msg, sizeof(msg), &current, IP_ORIGINAL_CALLED_NUMBER, param, res);
     param[0] = 0x04; /* redirecting indicator: call diverted, all redirection information presentation restricted,
 			original redirection reason: unknown */
     if (redir)

@@ -1,0 +1,69 @@
+Build
+-----
+If asterisk is installed at the default location, just do
+
+	make
+
+It is possible to set the environment variable INCLUDE to specify
+locations for Asterisk and Zaptel header files, and to set
+INSTALL_PREFIX to specify a non-standard Asterisk installation root. For
+example:
+
+	INCLUDE="-I../zaptel -I../asterisk/include" make chan_ss7.so
+
+The code is designed for Asterisk 1.2.x and 1.4.x.
+
+
+
+Install
+-------
+Use 
+
+	INSTALL_PREFIX=/usr/local/asterisk make install
+
+or just
+
+	make install
+
+if your asterisk is installed at the default location.
+
+Alternatively, you can copy chan_ss7.so to the asterisk runtime module directory.
+
+Create an ss7.conf (copy/paste/edit one of the ss7.conf.template.*
+that best fits your needs). See additional information at
+
+    http://www.voip-info.org/wiki/index.php?page=Asterisk+ss7+channels
+
+Copy the ss7.conf to the asterisk runtime configuration directory,
+this is by default located in /etc/asterisk, or
+INSTALL_PREFIX/etc/asterisk.
+
+
+
+Run
+---
+
+Issue
+
+    load chan_ss7.so
+
+in the Asterisk console. Read the file "ASTERISK_VARIABLES" to find out which
+variables are read/set by chan_ss7.
+
+
+Debugging
+---------
+
+chan_ss7 allows dumping of MTP2 packets into a capture 
+file in pcap format (wireshark) using the 
+    ss7 dump start /path/to/filename
+command.
+
+If you want "live" decoding you could dump into a FIFO 
+file and use tshark to capture from the FIFO, e.g.:
+
+  # mkfifo /tmp/mtp2fifo.pcap
+  # asterisk -r
+  > ss7 dump start /tmp/mtp2fifo.pcap
+  > quit
+  # tshark -V -i /tmp/mtp2fifo.pcap

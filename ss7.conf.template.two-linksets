@@ -1,0 +1,50 @@
+[linkset-siuc]
+enabled => yes
+enable_st => no
+use_connect => yes
+hunting_policy => even_mru
+subservice => auto
+
+[linkset-peer2]
+enabled => yes
+enable_st => no
+use_connect => yes
+hunting_policy => even_mru
+subservice => auto
+
+
+[link-l1]
+linkset => siuc
+channels => 1-15,17-31
+schannel => 16
+firstcic => 1
+enabled => yes
+
+[link-l2]
+linkset => siuc
+channels => 1-15,17-31
+schannel => 16
+firstcic => 33 
+enabled => yes
+
+
+[link-l3]
+linkset => peer2
+channels => 1-15,17-31
+schannel => 16
+firstcic => 1
+enabled => yes
+
+[link-l4]
+linkset => peer2
+channels => 1-15,17-31
+schannel => 16
+firstcic => 33 
+enabled => yes
+
+[host-gentoo1]
+enabled => yes
+default_linkset => siuc
+opc => 0x8e0
+dpc => siuc:0x3fff,peer2:0x3aaa
+links => l1:1,l2:2,l3:3,l4:4

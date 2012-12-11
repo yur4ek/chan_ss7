@@ -1,0 +1,106 @@
+This is the README for chan_ss7, version 0.9
+
+Copyright (C) 2006-2011 Netfors ApS.
+
+chan_ss7 is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+A copy of the GPL is included in the file COPYING.
+
+The chan_ss7 module implements SS7 connectivity for Asterisk. Major features
+include
+
+ - MTP2 (Q.703) implementation (mostly complete).
+ - MTP3 (Q.704) implementation (bare essentials).
+ - ISUP (Q.76x) implementation (reasonable subset).
+ - Supports Digium E1 (T1 and other zap-compatible cards should be easy to
+   add).
+ - Supports incoming and outgoing calls.
+ - Supports full ALAW audio (ULAW should be easy to add).
+ - Facilities for raw MTP2 packet dump, suitable for Ethereal debugging.
+ - Open Source (GPL).
+ - Supports high call volumes; tested with 120 simultaneous calls, but
+   should handle much more than that, depending on transcoding etc.
+ - Supports multiple linksets with different DPCs
+ - Supports linksets with multiple links.
+ - Supports load sharing and MTP changeover.
+ - Supports multiple hosts (cluster) configuration with load sharing and failover.
+ - Flexible Dial command syntax for SS7 to allow use on linksets,
+   e.g. Dial(SS7/linkset1/12345678)
+
+New in version 0.9
+- Major refactoring of source code to support other level 4 protocols
+- Dynamic adjustment of audio data buffers during writes -
+  this should reduce "write buffer full" problems
+- New CLI command: ss7 show channels, same as ss7 linestat
+- Initial address message can be broken to IAM and subsequent SAMs
+- Fixed crash when executing CLI reset command
+- Tested with asterisk version 1.2.9.
+
+New in version 0.8.4
+- Fixed crash when T1 expires
+- Made check on audio read to detect underruns
+- Fixed crash in process_acm
+- Changed priority for continuity check thread
+- Fixed crash in CLI command block/unblock
+- Fixed CLI command output: "Unknown state: 3"
+- Listen on cluster socket only when there are other cluster nodes configured
+- Port for TCP connection in cluster now configurable
+- Use of ast_setstate to report channel state changes
+- New per link config options to enable echo cancellation in Zaptel driver
+- New CIC hunting policies: sequential low-to-high and sequential high-to-low
+
+
+New in version 0.8.3
+- Fixed propagation of release causes to/from asterisk
+- Reply with UEC when receiving messages from unknown peers
+- Make t35 value configurable, and action upon timeout
+  selectable (Timeout/End-of-pulsing)
+- Redirecting number and redirection information are now
+  included in IAM when present
+- The optional backward call indicators allways has
+ 'In-band information indication'. If chan_ss7 has not detected
+  any other source of in-band information, it generates it
+- Enhanced dial command syntax: Dial(SS7/number:redirecting-number),
+  allows a redirecting number to be inserted into IAM
+
+New in version 0.8.2
+- Handling of suspend/resume
+
+New in version 0.8.1
+- Introduced subservice configuration option for linksets.
+- Fixed bug that causes crash when received CGU and other circuit group messages
+- Fixed bug that causes repeat warning when doing continuity check
+- Fixed a problem with the initial alignment procedure
+- Tested with asterisk version 1.2.4.
+
+New in version 0.8
+
+- Multiple links with load sharing and MTP changeover
+- Multiple linksets and multiple peers
+- Multiple hosts (cluster) with failover capability
+- Multiple interconnects (TCP/IP) between hosts for redundant communication links
+- Additional supported ISUP messages
+	- Circuit group unblocking
+	- Circuit group unblocking acknowledge
+	- Single circuit reset
+	- Single circuit blocking
+	- Single circuit unblocking
+	- Continuity check request
+	- Continuity
+	- Subsequent address message
+	- Sending of address complete message
+	- Sending of answer message
+- New UI ss7 commands: link status, linestat, cluster {start,stop,status}
+- Partial support for continuity check
+- Partial support for overlapped dialling (IAM, subsequent SAMs)
+
+The configuration file format has changed, please refer to the different
+ss7.conf.template.* example configuration files. It is designed such that
+the same file can be used in a multi host setup.
+
+
+
+Report any problems or successes to chan-ss7@netfors.com.

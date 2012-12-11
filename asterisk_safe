@@ -1,0 +1,210 @@
+#! perl
+
+# Copyright (C) 2005-2011, Netfors ApS.
+#
+# Author: Kristian Nielsen <kn@sifira.dk>
+#
+# This file is part of chan_ss7.
+#
+# chan_ss7 is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# chan_ss7 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with chan_ss7; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+# Wrapper for Asterisk to run it with real-time priority, restarting
+# it if it crashes, and whacking it to non-realtime priority if it is
+# found to starve out normal user-space (infinite loop ...).
+
+use strict;
+use warnings;
+
+use POSIX ":sys_wait_h";
+use Sys::Syslog();
+
+# ToDo: Specify Inline build directory somewhere convenient.
+use Inline 'C';
+
+my $child_pid = open(CHILD, '-|');
+die "Cannot fork(): $!.\n" unless defined($child_pid);
+if($child_pid == 0) {                 # Child
+    if(set_non_rt($$)) {
+        log_error("Watchdog child could not remove realtime priority: $!.\n");
+    }
+
+    # The child just runs mindlessly writing stuff down the pipe every
+    # second. If the parent sees nothing for a long time, that
+    # indicates that the non-realtime child is getting starved,
+    # presumably by an infinite loop in the asterisk realtime process.
+    $| = 1;
+    for(;;) {
+        print "\n";
+        sleep 1;
+    }
+    # Child runs until kill()'ed by parent.
+}
+
+my $asterisk_pid = spawn_asterisk(@ARGV);
+
+# Now set our own realtime priority high, so that we can have priority
+# over an asterisk process run wild and get the CPU time necessary to
+# whack him over the head.
+if(set_rt_prio($$, 20)) {
+    log_error("Cannot set realtime priority for parent: $!.\n");
+}
+
+my $rin = '';
+vec($rin, fileno(CHILD), 1) = 1;
+for(;;) {
+    if(defined($child_pid)) {
+        # Wait up to 5 seconds for a sign of life from the child.
+        my $rout = $rin;
+        my $nfound = select($rout, undef, undef, 5);
+        if(!$nfound) {
+            # Timeout; assume the worst.
+            log_error("Timeout reading from child; assuming runaway asterisk, setting it back to non-realtime priority.\n");
+            whack_pid($asterisk_pid);
+        } else {
+            my $buf;
+            unless(sysread(CHILD, $buf, 255) > 0) {
+                # EOF/error on the child process indicate its death, which is bad.
+                # Make sure to at least not create an infinite loop at realtime
+                # priority here in the parent.
+                log_error("Error reading from child, child may have died.\n");
+                undef $child_pid;
+            }
+        }
+    } else {
+        # Avoid infinite loop if the child dies.
+        sleep 1;
+    }
+
+    # Check for asterisk termination.
+    if(waitpid($asterisk_pid, WNOHANG) > 0) {
+        my $sig = $? & 127;
+        if($sig) {
+            # Asterisk died; attempt a re-spawn.
+            log_error("Asterisk process died with signal $sig, respawning ...\n");
+            sleep 2;            # Just in case...
+            $asterisk_pid = spawn_asterisk(@ARGV);
+        } else {
+            # Asterisk stopped normally, so we are done.
+            print "Normal asterisk stop, exiting...\n";
+            last;
+        }
+    }
+}
+
+# Kill off the child.
+if(defined($child_pid)) {
+    kill TERM => $child_pid;
+    waitpid($child_pid, 0);
+}
+
+exit 0;
+
+
+# Log an error to STDERR and syslog.
+my $syslog_inited;
+sub log_error {
+    my ($msg) = @_;
+    unless($syslog_inited) {
+        Sys::Syslog::setlogsock('unix');
+        Sys::Syslog::openlog('asterisk_safe', 'pid', 'daemon');
+        $syslog_inited = 1;
+    }
+
+    chomp($msg);
+    print STDERR "asterisk_safe: ", $msg, "\n";
+    Sys::Syslog::syslog('err', '%s', $msg);
+}
+
+# Spawn asterisk process. Returns PID of child process.
+sub spawn_asterisk {
+    my ($exe, @args) = @_;
+    my $pid = fork();
+    die "Cannot fork(): $!.\n" unless defined($pid);
+
+    if($pid) {
+        return $pid;
+    } else {
+        # Child.
+        if(set_rt_prio($$, 10)) {
+            log_error("Cannot set realtime priority for asterisk: $!.\n");
+        }
+        exec $exe, @args;
+        die "Cannot exec(): $!.\n";
+    }
+}
+
+# Remove realtime priority from a process and all of its children.
+sub whack_pid {
+    my ($pid) = @_;
+
+    # First look in /proc to build a tree of all processes and their
+    # parent/child relationships.
+    # ToDo: This code is for Linux 2.4; in 2.6 threads do not appear in /proc,
+    # and must instead be found in /proc/<pid>/task/.
+    unless(opendir PROC, '/proc') {
+        log_error("Cannot read /proc: $!\n");
+        return;
+    }
+    my $h = { };
+    for (readdir PROC) {
+        $h->{$1} = [ ] if /^\.?([0-9]+)$/;
+    }
+    closedir PROC;
+
+    unless(exists($h->{$pid})) {
+        log_error("Cannot find asterisk process in /proc.\n");
+        return;
+    }
+
+    for my $p (keys %$h) {
+        if(open FH, '<', "/proc/$p/status") {
+            while(<FH>) {
+                push @{$h->{$1}}, $p if /^PPid:\s+([0-9]+)/ && exists $h->{$1};
+            }
+            close FH;
+        }
+    }
+
+    recursive_whack($h, $pid);
+}
+
+sub recursive_whack {
+    my ($h, $pid) = @_;
+
+    my $res = set_non_rt($pid);
+    if($res == 0) {
+        recursive_whack($h, $_) for (@{$h->{$pid}});
+    }
+}
+
+__DATA__
+__C__
+#include <sched.h>
+
+static int set_prio(int pid, int typ, int prio) {
+    struct sched_param sp;
+    memset(&sp, 0, sizeof(sp));
+    sp.sched_priority = prio;
+    return sched_setscheduler(pid, typ, &sp);
+}
+
+/* Sets realtime priority, returns 0 on ok, -1 on error (setting errno). */
+int set_rt_prio(int pid, int prio) {
+    return set_prio(pid, SCHED_RR, prio);
+}
+/* Removes realtime priority, returns 0 on ok, -1 on error (setting errno). */
+int set_non_rt(int pid) {
+    return set_prio(pid, SCHED_OTHER, 0);
+}

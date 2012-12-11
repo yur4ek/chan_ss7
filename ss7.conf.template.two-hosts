@@ -1,0 +1,70 @@
+[linkset-siuc]
+enabled => yes
+enable_st => no
+use_connect => yes
+hunting_policy => even_mru
+subservice => auto
+
+[linkset-peer2]
+enabled => yes
+enable_st => no
+use_connect => yes
+hunting_policy => even_mru
+subservice => auto
+
+
+[link-l1]
+linkset => siuc
+channels => 1-15,17-31
+schannel => 16
+firstcic => 1
+enabled => yes
+
+[link-l2]
+linkset => siuc
+channels => 1-15,17-31
+schannel => 16
+firstcic => 33 
+enabled => yes
+
+
+[link-l3]
+linkset => peer2
+channels => 1-15,17-31
+schannel => 16
+firstcic => 1
+enabled => yes
+
+[link-l4]
+linkset => peer2
+channels => 1-15,17-31
+schannel => 16
+firstcic => 33 
+enabled => yes
+
+[host-gentoo1]
+enabled => yes
+default_linkset => siuc
+opc => 0x8e0
+dpc => siuc:0x3fff,peer2:0x3aaa
+if-1 => 192.168.1.61
+if-2 => 192.168.99.61
+links => l1:1,l3:2
+
+[host-gentoo2]
+enabled => yes
+default_linkset => peer2
+opc => 0x3aaa
+dpc => siuc:0x3fff,peer2:0x8e0
+if-1 => 192.168.1.62
+if-2 => 192.168.99.62
+links => l2:1,l4:2
+
+[cluster]
+; Listen on TCP port 5040
+port => 5040
+; Signalling traffic on link l1 is monitored by host gentoo2 on interfaces if-1 and if-2
+l1 => gentoo2#if-1,gentoo2#if-2
+l2 => gentoo1#if-1,gentoo1#if-2
+l3 => gentoo2#if-1,gentoo2#if-2
+l4 => gentoo1#if-1,gentoo1#if-2

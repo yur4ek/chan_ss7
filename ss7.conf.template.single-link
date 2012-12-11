@@ -1,0 +1,131 @@
+[linkset-siuc]
+
+; The linkset is enabled
+enabled => yes
+
+; The end-of-pulsing (ST) is not used to determine when incoming address is complete
+enable_st => no
+
+; Reply incoming call with CON rather than ACM and ANM
+use_connect => yes
+
+; The CIC hunting policy (even_mru, odd_lru, seq_lth, seq_htl) is even CIC numbers, most recently used
+hunting_policy => even_mru
+
+; Incoming calls are placed in the ss7 context in the asterisk dialplan
+context => ss7
+
+; The language for this context is da
+language => da
+
+; The value and action for t35. Value is in msec, action is either st or timeout
+; If you use overlapped dialling dial plan, you might choose: t35 => 4000,st
+t35 => 15000,timeout
+
+; The subservice field: national (8), international (0), auto or decimal/hex value
+; The auto means that the subservice is obtained from first received SLTM
+subservice => auto
+
+; The host running the mtp3 service
+; mtp3server => localhost
+
+; SS7 variant, either ITU or CHINA
+;variant => ITU
+
+; The point code for this SS7 signalling point is 0x8e0
+; If point code is included here, it must not occur in host section
+;opc => 0x8e0
+
+; The destination point (peer) code is 0x3fff for linkset siuc
+; If point code is included here, it must not occur in host section
+;dpc => siuc:0x3fff
+
+[link-l1]
+
+; This link belongs to linkset siuc
+linkset => siuc
+
+; The speech/audio circuit channels on this link
+channels => 1-15,17-31
+
+; The signalling channel
+schannel => 16
+; To use the remote mtp3 service, use 'schannel => remote,16'
+
+; The first CIC
+firstcic => 1
+
+; The link is enabled
+enabled => yes
+
+; Echo cancellation
+; echocancel can be one of: no, 31speech (enable only when transmission medium is 3.1Khz speech), allways
+echocancel => no
+; echocan_train specifies training period, between 10 to 100 msec
+echocan_train => 350
+; echocan_taps specifies number of taps, 32, 64, 128 or 256
+echocan_taps => 128
+
+; RX and TX gains
+rxgain => 0.0
+
+txgain => 0.0
+
+; Relax DTMF, yes or no
+
+relaxdtmf => no
+
+; If link is connected to an STP with point code 0x3ff0, the following may be needed
+stp => 0x3ff0
+
+[host-gentoo1]
+; chan_ss7 auto-configures by matching the machines host name with the host-<name>
+; section in the configuration file, in this case 'gentoo1'. The same
+; configuration file can thus be used on several hosts. 
+
+; The host is enabled
+enabled => yes
+
+; The point code for this SS7 signalling point is 0x8e0
+opc => 0x8e0
+
+; The destination point (peer) code is 0x3fff for linkset siuc
+dpc => siuc:0x3fff
+; If the link connected to an STP (with point code 0x123), you may use
+; dpc => siuc:0x3ff,l1:0x123
+
+; Syntax: links => link-name:digium-connector-no
+; The links on the host is 'l1', connected to span/connector #1
+links => l1:1
+
+; The SCCP global title: translation-type, nature-of-address, numbering-plan, address
+globaltitle => 0x00, 0x04, 0x01, 4546931411
+ssn => 7
+
+
+[jitter]
+;------------------------------ JITTER BUFFER CONFIGURATION --------------------------
+; jbenable = yes              ; Enables the use of a jitterbuffer on the receiving side of a
+                              ; SIP channel. Defaults to "no". An enabled jitterbuffer will
+                              ; be used only if the sending side can create and the receiving
+                              ; side can not accept jitter. The SIP channel can accept jitter,
+                              ; thus a jitterbuffer on the receive SIP side will be used only
+                              ; if it is forced and enabled.
+
+; jbforce = no                ; Forces the use of a jitterbuffer on the receive side of a SIP
+                              ; channel. Defaults to "no".
+
+; jbmaxsize = 200             ; Max length of the jitterbuffer in milliseconds.
+
+; jbresyncthreshold = 1000    ; Jump in the frame timestamps over which the jitterbuffer is
+                              ; resynchronized. Useful to improve the quality of the voice, with
+                              ; big jumps in/broken timestamps, usually sent from exotic devices
+                              ; and programs. Defaults to 1000.
+
+; jbimpl = fixed              ; Jitterbuffer implementation, used on the receiving side of a SIP
+                              ; channel. Two implementations are currently available - "fixed"
+                              ; (with size always equals to jbmaxsize) and "adaptive" (with
+                              ; variable size, actually the new jb of IAX2). Defaults to fixed.
+
+; jblog = no                  ; Enables jitterbuffer frame logging. Defaults to "no".
+;-----------------------------------------------------------------------------------

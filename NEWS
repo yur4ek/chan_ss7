@@ -1,0 +1,104 @@
+This is the NEWS for chan_ss7. This version is maintained by Anders Baekgaard (ab@netfors.com).
+Please send bug reports, feature requests etc. to chan_ss7@netfors.com.
+
+Specfication for version 2.1.0
+ - Compatible with Asterisk 1.2.x, 1.4.x, 1.6.x., 1.8.x
+ - MTP2 (Q.703) implementation
+ - MTP3 (Q.704) implementation (subset).
+ - ISUP (Q.76x) implementation (mostly complete).
+ - Supports Dahdi/Zaptel compatible digital interfaces, e.g. Redfone, Sangoma, Digium, Openvox
+ - Facilities for MTP2 packet protocol analysis using e.g. wireshark/ethereal
+ - Supports high call volumes
+ - Supports multiple linksets with different OPCs/DPCs
+ - Supports linksets with multiple links.
+ - Supports load sharing and MTP changeover.
+ - Supports multiple hosts (cluster) configuration with load sharing and failover.
+ - Flexible Dial command syntax for SS7 to allow routing to different linksets.
+
+
+New in version 2.1.0
+- Compatible with Asterisk 1.8.x (input from www.nethemba.com)
+
+New in version 2.0.0
+- Preliminary ANSI support.
+
+New in version 1.4.3
+- Handling of redirection info/number in REL.
+- Support multiple linksets on one E1/T1.
+- Fixes to mtp3d interface.
+- Setting SS7_TMR variable on incoming calls, using SS7_TMR variable to set TMR on outgoing calls.
+- Handling of redirection information in REL: SS7_RDNI, SS7_REDIR, SS7_REDIRECTCOUNT and PRIREDIRECTREASON.
+
+New in version 1.4.2
+- Minor fixes
+
+New in version 1.4.1
+- Fix for dial command CIC parsing.
+
+New in version 1.4
+- Support for linkset groups. The config option "group" for a linkset specifies which group a
+  linkset belongs to. The dial command is extended to allow dialing to a linkset group, e.g.
+  Dial(SS7/group1) where group1 may consist of multiple linksets.
+- Handling/rejection of T.38 parameters.
+- Dial command syntax extended. Dialing specific CIC is Dial(SS7/linkset:cic-range), e.g.
+  Dial(SS7/linkset1:1-10/number) for dialing out on linkset1 on CICs 1-10, or Dial(SS7/linkset1:2/number)
+  for dialing on CIC 2.
+- Multiple DPC per linkset handling (Dutch ISUP).
+- New config parameter for link: iftype, either E1 or T1.
+
+New in version 1.3
+- Support for multiple OPC (opc and dpc configuration settings now allowed in linkset section).
+- Support of hardware/driver HDLC and FCS and MTP2 mode.
+- New config parameter for link: stp, specifies STP point code.
+- Handling of generic numbers in IAM
+- Fixes for SCTP/IP
+- Support for multiple signaling time slots on one E1 (schannel and sls config parameters)
+- New config option for linkset: noa. Specify NOA for called party.
+
+New in version 1.2.1
+- Fix bug causing segmentation violation when using some cli commands
+
+New in version 1.2
+- Handling of UBA fixed.
+- Compensation for problems with "resource temparily unavailable" when doing zaptel i/o.
+- New config parameters for linkset: blockin and blockout. Sets initial blocking status for CICs.
+- Hardware DTMF support (thanks to Sangoma).
+- Dahdi and Asterisk 1.6.x support fixes.
+
+New in version 1.1
+- Fixed buffer overflows in config.c.
+- Fixed loss of IDLE CICs.
+- Fixed segmentation fault when using "combined" attribute for linksets.
+- Fixed block/unblock of last cic not possible bug.
+- Fixed handling of dial request supporting multiple audio formats.
+- Support for STP signalling, see file ss7.conf.template.single-link for config.
+- Jitter buffer handling (thanks to Martin Vít, sponsored by www.voipex.cz).
+- H324M support (thanks to Klaus Darilion).
+- Fixed a bug that could cause one-way audio in some cases where DTMF codes are sent.
+- Fixed a bug where receive fifo is no longer being read.
+- New configuration parameters for link, rxgain and txgain, specifies gain values.
+- New configuration parameter for link, relaxdtmf, specifies whether to use relax dtmf.
+- Fixed handling of timeout after received suspend message.
+- Handling of Chinese SS7 variant: new variant config parameter for linksets (SS7 or CHINA)
+  (Thanks to Lin Miao, lin.miao at domain openvox.cn).
+- Fixes to SS7 variant handling.
+- Fixed various mutex locking bugs
+- The circuit group messages GRS, CGB and CGU are now substituted by a sequence of their
+  single CIC counterpart when the configuration parameter grs is set to no for a linkset.
+- Dahdi support (preliminary).
+- Fixes to the non-group messages for GRS, CGB, CGU.
+- FreeBSD support
+
+New in verion 1.0.0
+- Compatible with asterisk 1.2.x and 1.4.x.
+- MTP stack placed in standalone executable.
+- New loadshare config parameter for linksets (None, linkset, combined).
+- New combined config parameter for linksets. Linksets having the same combined
+  setting and having loadshare=combined share signalling channels.
+- New auto_block config parameter for links. When set to yes, the CICs on that link
+  are blocked when signalling on the link is lost.
+- The schannel entry in link description in configuration file may specify remote MTP stack.
+- PDU dump is now in PCAP format, suitable for wireshark.
+- Lots and lots of clean ups and fixes.
+
+

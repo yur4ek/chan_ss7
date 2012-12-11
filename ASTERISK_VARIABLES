@@ -1,0 +1,33 @@
+chan_ss7 variables:
+===================
+
+variables read by chan_ss7:
+---------------------------
+  ISDN_H324M: If this variable is set, then chan_ss7 signals 
+              H324M (3G Video aka H.223 and H.245) in outgoing IAM
+              messages. Allowed values (case sensitive):
+                USI	signal H324M in User Service Information field
+                LLC	signal H324M in Access Transport field using Low
+			Layer Compatibility
+                USI+LLC	signal H324M in User Service Information field AND
+			Access Transport
+
+              Note: chan_ss7 read the variable from the outgoing channel. As in 
+              extensions.conf only the incoming channel variables can be set, you
+              have to set the variable as a global variable by prefixing with __ 
+              (double underscore). Usage example:
+
+		[from-sip-phone]
+		exten => _videoX.,1,h324m_call(${EXTEN}@tomobile)
+		[tomobile]
+		exten => _videoX.,1,Set(CALLERID(num)=0043123456)
+		exten => _videoX.,n,Set(__ISDN_H324M=USI+LLC)
+		exten => _videoX.,n,Dial(ss7/siuc/${EXTEN:5}|90|)
+
+
+
+
+variables set by chan_ss7:
+--------------------------
+  none (there should be a variable which indicates if the incoming call
+  is a H324M video call, but this is not implemented yet)

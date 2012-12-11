@@ -1,0 +1,88 @@
+#! /bin/sh
+#
+# mtp3d	start the mtp3 daemon
+#
+### BEGIN INIT INFO
+# Provides: mtp3d
+# Should-Start: 
+# Should-Stop: 
+# Default-Start:  2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: start and stop mtp3d
+# Description: mtp3d is an mtp3 daemon
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/ss7/sbin
+NAME=mtp3d
+DESC="mtp3d"
+INSTALL_PREFIX=/usr/local/ss7
+MTP3CONFDIR=${INSTALL_PREFIX}/etc
+# Full path to mtp3d binary
+MTP3DAEMON=${INSTALL_PREFIX}/sbin/mtp3d
+PIDFILE=/var/run/mtp3d.pid
+MTP3OPTDEBUG=-d
+MTP3LOGFILE=/var/log/mtp3d.log
+MTP3PDUDUMP="-m /tmp/mtp3d.pcap"
+
+# Full path to safe_mtp3d script
+SAFE_MTP3D=${INSTALL_PREFIX}/sbin/safe_mtp3d
+[ -f /etc/sysconfig/ss7 ] && source /etc/sysconfig/ss7
+[ -f /etc/default/ss7 ] && source /etc/default/ss7
+
+
+# Uncomment the following and set them to the user/groups that you
+# want to run mtp3d as.
+#USER="asterisk"
+#GROUP="asterisk"
+
+source /etc/init.d/functions
+
+if ! [ -x $MTP3DAEMON ] ; then
+        echo "ERROR: $MTP3DAEMON not found"
+        exit 0
+fi
+
+set -e
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	if [ -f $PIDFILE ]; then
+		if checkpid `cat $PIDFILE`; then
+			echo_failure "Already started"
+			exit 1
+		fi
+	fi
+	if [ -f $SAFE_MTP3D ] ; then
+		MTP3DAEMON=$SAFE_MTP3D
+	fi
+        if [ $USER ] ; then
+                ASTARGS="-U $USER"
+        fi
+        if [ $GROUP ] ; then
+                ASTARGS="`echo $ASTARGS` -G $GROUP"
+        fi
+	$MTP3DAEMON -c $MTP3CONFDIR $MTP3PDUDUMP -p $MTP3OPTDEBUG  >& $MTP3LOGFILE &
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	if [ -f $PIDFILE ]; then
+		kill `cat $PIDFILE`
+		rm -f $PIDFILE
+	fi
+	echo "."
+	exit 0
+	;;
+  restart)
+  	$0 stop || true
+  	$0 start
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

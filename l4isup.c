@@ -1917,7 +1917,10 @@ static int isup_phonenum_check(char **number, int *nlen,
   }
 
   /* Handle both '00' and '+' as international prefix. */
-  if(strncmp(*number, "00", 2) == 0) {
+  if((strncmp(*number, "00", 2) == 0) && (*nlen == 3) ) {
+    /* pass through russian special numbers like 001,002,003 etc */
+    *is_international = 0;
+  } else if(strncmp(*number, "00", 2) == 0) {
     *is_international = 1;
     *number += 2;
     *nlen -= 2;
